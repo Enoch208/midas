@@ -151,13 +151,35 @@ export function AgentProvider({ children }: { children: ReactNode }) {
 
     try {
       const analyzeDelay = wait(1400);
-      const body = new FormData();
-      body.append("creator", wallet);
-      body.append("stem", file);
-      const res = await fetch("/api/midas/execute", {
-        method: "POST",
-        body,
-      });
+      const analysisUrl = process.env.NEXT_PUBLIC_ANALYSIS_API_URL?.trim();
+      let res: Response;
+      if (analysisUrl) {
+        const fd = new FormData();
+        fd.append("stem", file);
+        const ah: Record<string, string> = {};
+        const pubKey = process.env.NEXT_PUBLIC_ANALYSIS_API_KEY?.trim();
+        if (pubKey) ah.Authorization = `Bearer ${pubKey}`;
+        const ar = await fetch(analysisUrl, { method: "POST", body: fd, headers: ah });
+        if (!ar.ok) throw new Error(`analysis failed: ${ar.status}`);
+        const analysisJson = (await ar.json()) as Record<string, unknown>;
+        res = await fetch("/api/midas/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            creator: wallet,
+            analysis: analysisJson,
+            stemMeta: { name: file.name, size: file.size, type: file.type },
+          }),
+        });
+      } else {
+        const body = new FormData();
+        body.append("creator", wallet);
+        body.append("stem", file);
+        res = await fetch("/api/midas/execute", {
+          method: "POST",
+          body,
+        });
+      }
       if (!res.ok) throw new Error(`execute failed: ${res.status}`);
       const data = await res.json();
 

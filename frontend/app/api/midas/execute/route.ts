@@ -44,8 +44,17 @@ type AnalysisResult = {
   bpm: number
   key: string
   durationSec: number
-  source: "vps" | "fallback"
+  source: "client" | "vps" | "fallback"
   genreHint?: string | null
+}
+
+type ParsedRequest = {
+  connectedCreator: string | null
+  stemFile: File | null
+  stemName: string | null
+  stemSize: number | null
+  stemType: string | null
+  clientAnalysis: AnalysisResult | null
 }
 
 const pick = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]
@@ -74,29 +83,59 @@ function pickArtistFromWallet(wallet: string | null) {
   return AUDIERA_ARTISTS[idx]
 }
 
-async function parseCreatorAndStem(request: Request) {
+function normalizeClientAnalysis(raw: unknown): AnalysisResult | null {
+  if (!raw || typeof raw !== "object") return null
+  const o = raw as Record<string, unknown>
+  const bpm = Math.round(Number(o.bpm))
+  const key = typeof o.key === "string" ? o.key : ""
+  const durationSec = Math.round(Number(o.durationSec))
+  if (!Number.isFinite(bpm) || !key || !Number.isFinite(durationSec)) return null
+  const genreHint = typeof o.genreHint === "string" ? o.genreHint : null
+  return { bpm, key, durationSec, source: "client", genreHint }
+}
+
+async function parseRequest(request: Request): Promise<ParsedRequest> {
   const contentType = request.headers.get("content-type") ?? ""
-  if (!contentType.includes("multipart/form-data")) {
-    const body = (await request.json().catch(() => null)) as { creator?: string } | null
+  if (contentType.includes("application/json")) {
+    const body = (await request.json().catch(() => null)) as {
+      creator?: string
+      analysis?: unknown
+      stemMeta?: { name?: string; size?: number; type?: string }
+    } | null
+    const creator =
+      body && isValidAddress(body.creator) ? body.creator : null
+    const meta = body?.stemMeta
     return {
-      connectedCreator: body && isValidAddress(body.creator) ? body.creator : null,
-      stemFile: null as File | null,
-      stemName: null as string | null,
-      stemSize: null as number | null,
-      stemType: null as string | null,
+      connectedCreator: creator,
+      stemFile: null,
+      stemName: meta?.name ?? null,
+      stemSize: typeof meta?.size === "number" ? meta.size : null,
+      stemType: meta?.type ?? null,
+      clientAnalysis: normalizeClientAnalysis(body?.analysis),
     }
   }
 
-  const formData = await request.formData()
-  const creator = formData.get("creator")
-  const stem = formData.get("stem")
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData()
+    const creator = formData.get("creator")
+    const stem = formData.get("stem")
+    return {
+      connectedCreator: isValidAddress(creator) ? creator : null,
+      stemFile: stem instanceof File ? stem : null,
+      stemName: stem instanceof File ? stem.name : null,
+      stemSize: stem instanceof File ? stem.size : null,
+      stemType: stem instanceof File ? stem.type : null,
+      clientAnalysis: null,
+    }
+  }
 
   return {
-    connectedCreator: isValidAddress(creator) ? creator : null,
-    stemFile: stem instanceof File ? stem : null,
-    stemName: stem instanceof File ? stem.name : null,
-    stemSize: stem instanceof File ? stem.size : null,
-    stemType: stem instanceof File ? stem.type : null,
+    connectedCreator: null,
+    stemFile: null,
+    stemName: null,
+    stemSize: null,
+    stemType: null,
+    clientAnalysis: null,
   }
 }
 
@@ -208,8 +247,11 @@ async function pollAudieraMusic(taskId: string, key: string): Promise<MusicResul
 }
 
 export async function POST(request: Request) {
-  const { connectedCreator, stemFile, stemName, stemSize, stemType } = await parseCreatorAndStem(request)
-  const analysis = await analyzeTrackOnVps(stemFile)
+  const parsed = await parseRequest(request)
+  const { connectedCreator, stemFile, stemName, stemSize, stemType, clientAnalysis } =
+    parsed
+  const analysis =
+    clientAnalysis ?? (await analyzeTrackOnVps(stemFile))
   const genre = pick(GENRES)
   const stemSeed = stemSize ?? Math.floor(Math.random() * 100000)
   const metadata = {
@@ -221,7 +263,10 @@ export async function POST(request: Request) {
     sourceFileSize: stemSize,
     sourceFileType: stemType,
     analysisSource: analysis?.source ?? "fallback",
-    analysisApiUrl: process.env.ANALYSIS_API_URL ?? null,
+    analysisApiUrl:
+      process.env.NEXT_PUBLIC_ANALYSIS_API_URL ??
+      process.env.ANALYSIS_API_URL ??
+      null,
   }
 
   const audieraKey = process.env.AUDIERA_API_KEY

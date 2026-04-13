@@ -42,15 +42,20 @@ export function Hero() {
 
       <div className="mx-auto max-w-7xl px-6 pt-40 pb-32">
         <MotionIn>
-          <span className="inline-flex items-center gap-2.5 border border-white/10 bg-white/[0.02] px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.25em] text-zinc-400">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500" />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2.5 rounded-full border border-amber-500/40 bg-amber-500/5 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.25em] text-amber-300">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500" />
+              </span>
+              Audiera · Agent-Native Challenge
             </span>
-            <span className="text-zinc-300">bnb · mainnet</span>
-            <span className="text-zinc-700">|</span>
-            <span>0x7a9f…2e8b</span>
-          </span>
+            <span className="inline-flex items-center gap-2.5 border border-white/10 bg-white/[0.02] px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.25em] text-zinc-400">
+              <span className="text-zinc-300">bnb · testnet</span>
+              <span className="text-zinc-700">|</span>
+              <span>splitter · 0xeab5…Ea994</span>
+            </span>
+          </div>
         </MotionIn>
 
         <MotionIn delay={0.08} className="mt-8">
@@ -79,10 +84,25 @@ export function Hero() {
 
         <MotionIn delay={0.16} className="mt-8">
           <p className="max-w-2xl text-lg leading-relaxed text-zinc-400 md:text-xl">
-            Midas is the autonomous AI agent extracting, elevating and enriching every
-            track in the Audiera Participation Economy. 50/50 revenue splits, settled
-            on-chain, every block.
+            An autonomous feature artist built on Audiera Skills and BNB Chain.
+            Midas extracts, synthesizes and enriches every stem — then settles
+            a 50/50 revenue split to the creator's wallet, on-chain, the next
+            block. Create · Participate · Earn · Repeat.
           </p>
+        </MotionIn>
+
+        <MotionIn delay={0.2} className="mt-6">
+          <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-[0.25em]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1 text-zinc-300">
+              <span className="h-1 w-1 rounded-full bg-amber-500" /> Persona
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1 text-zinc-300">
+              <span className="h-1 w-1 rounded-full bg-amber-500" /> Audiera Skills
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1 text-zinc-300">
+              <span className="h-1 w-1 rounded-full bg-amber-500" /> On-chain Wallet
+            </span>
+          </div>
         </MotionIn>
 
         <MotionIn delay={0.24} className="mt-10">
@@ -94,10 +114,10 @@ export function Hero() {
 
         <MotionIn delay={0.32} className="mt-20">
           <div className="grid grid-cols-2 gap-px overflow-hidden border border-white/10 bg-white/[0.06] md:grid-cols-4">
-            <Stat label="Chain" value="BNB · 56" />
-            <Stat label="Contract" value="0x7a9f…2e8b" />
-            <Stat label="Splits · 24h" value="1,284" />
-            <Stat label="$BEAT paid" value="812,640" />
+            <Stat label="Chain" value="BNB · Testnet 97" />
+            <Stat label="Split contract" value="0xeab5…Ea994" />
+            <Stat label="$BEAT token" value="0x3C4A…01C4" />
+            <Stat label="Revenue split" value="50 / 50" />
           </div>
         </MotionIn>
       </div>
