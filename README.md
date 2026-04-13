@@ -44,7 +44,7 @@ flowchart LR
 
     API -->|POST /analyze| VPS["Analysis API<br/>(FastAPI + librosa)<br/>bpm · key · duration"]
     API -->|POST /api/skills/lyrics| AUDL["Audiera Lyrics Skill"]
-    API -->|POST /api/skills/music<br/>(poll 60× / 5s)| AUDM["Audiera Music Skill"]
+    API -->|POST /api/skills/music<br/>poll every 5s| AUDM["Audiera Music Skill"]
 
     API -->|ethers v6<br/>approve + executeFeatureSplit| RPC["BSC Testnet RPC"]
     RPC --> SPL["MidasSplitter<br/>0xeab5…Ea994"]
