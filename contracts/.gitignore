@@ -1,0 +1,23 @@
+# Foundry build artifacts
+cache/
+out/
+
+# Environment — holds PRIVATE_KEY, RPC URLs, API keys — NEVER commit
+.env
+.env.local
+.env.*
+
+# forge-std is installed non-submodule locally; re-fetch via `forge install
+# foundry-rs/forge-std` after clone. (openzeppelin-contracts IS a proper
+# submodule and stays tracked via .gitmodules.)
+lib/forge-std/
+
+# Coverage / fuzz corpus
+coverage/
+lcov.info
+
+# Test snapshots
+.gas-snapshot
+
+# Local
+.DS_Store
