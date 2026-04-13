@@ -151,7 +151,21 @@ export function AgentProvider({ children }: { children: ReactNode }) {
 
     try {
       const analyzeDelay = wait(1400);
-      const analysisUrl = process.env.NEXT_PUBLIC_ANALYSIS_API_URL?.trim();
+      let analysisUrl = "";
+      try {
+        const cfgRes = await fetch("/api/midas/config", { cache: "no-store" });
+        if (cfgRes.ok) {
+          const cfg = (await cfgRes.json()) as { analysisUploadUrl?: string | null };
+          if (typeof cfg.analysisUploadUrl === "string" && cfg.analysisUploadUrl.trim()) {
+            analysisUrl = cfg.analysisUploadUrl.trim();
+          }
+        }
+      } catch {
+        analysisUrl = "";
+      }
+      if (!analysisUrl) {
+        analysisUrl = process.env.NEXT_PUBLIC_ANALYSIS_API_URL?.trim() ?? "";
+      }
       let res: Response;
       if (analysisUrl) {
         const fd = new FormData();
