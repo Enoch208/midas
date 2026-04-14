@@ -60,7 +60,7 @@ type Ctx = {
   walletError: string | null;
   connectWallet: () => Promise<void>;
   disconnectWallet: () => Promise<void>;
-  runMidasAgent: (file: File | null) => Promise<void>;
+  runMidasAgent: (file: File | null, audieraApiKey: string) => Promise<void>;
 };
 
 const AgentContext = createContext<Ctx | null>(null);
@@ -141,8 +141,8 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     await disconnect();
   }, [disconnect]);
 
-  const runMidasAgent = useCallback(async (file: File | null) => {
-    if (!wallet || !file) return;
+  const runMidasAgent = useCallback(async (file: File | null, audieraApiKey: string) => {
+    if (!wallet || !file || !audieraApiKey.trim()) return;
     if (runningRef.current) return;
     runningRef.current = true;
 
@@ -181,6 +181,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             creator: wallet,
+            audieraApiKey: audieraApiKey.trim(),
             analysis: analysisJson,
             stemMeta: { name: file.name, size: file.size, type: file.type },
           }),
@@ -188,13 +189,17 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       } else {
         const body = new FormData();
         body.append("creator", wallet);
+        body.append("audieraApiKey", audieraApiKey.trim());
         body.append("stem", file);
         res = await fetch("/api/midas/execute", {
           method: "POST",
           body,
         });
       }
-      if (!res.ok) throw new Error(`execute failed: ${res.status}`);
+      if (!res.ok) {
+        const reason = (await res.text().catch(() => "")).trim();
+        throw new Error(reason ? `execute failed: ${res.status} ${reason}` : `execute failed: ${res.status}`);
+      }
       const data = await res.json();
 
       await analyzeDelay;

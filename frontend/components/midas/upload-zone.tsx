@@ -74,7 +74,8 @@ export function UploadZone() {
   const isAnalyzing = phase === "analyzing";
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const canRun = !isRunning && !!wallet && !!selectedFile;
+  const [audieraApiKey, setAudieraApiKey] = useState("");
+  const canRun = !isRunning && !!wallet && !!selectedFile && !!audieraApiKey.trim();
 
   const openPicker = () => {
     inputRef.current?.click();
@@ -194,7 +195,7 @@ export function UploadZone() {
 
         <motion.button
           onClick={() => {
-            void runMidasAgent(selectedFile);
+            void runMidasAgent(selectedFile, audieraApiKey);
           }}
           disabled={!canRun}
           whileHover={canRun ? { scale: 0.98 } : undefined}
@@ -222,9 +223,39 @@ export function UploadZone() {
           className="hidden"
         />
 
+        <div className="flex w-full max-w-lg flex-col gap-2">
+          <label
+            htmlFor="audiera-api-key"
+            className="font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500"
+          >
+            Audiera API key
+          </label>
+          <input
+            id="audiera-api-key"
+            type="password"
+            value={audieraApiKey}
+            onChange={(event) => setAudieraApiKey(event.target.value)}
+            placeholder="Paste your Audiera key"
+            autoComplete="off"
+            spellCheck={false}
+            disabled={isRunning}
+            className="w-full rounded-full border border-white/20 bg-[#0f0f11] px-4 py-3 text-sm text-zinc-100 outline-none transition-colors duration-300 placeholder:text-zinc-600 focus:border-amber-400 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-zinc-500"
+          />
+          <a
+            href="https://ai.audiera.fi/en/settings/api-keys"
+            target="_blank"
+            rel="noreferrer"
+            className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-300/90 transition-colors hover:text-amber-200"
+          >
+            Get key from Audiera settings
+          </a>
+        </div>
+
         <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-600">
           {!wallet
             ? "wallet required"
+            : !audieraApiKey.trim()
+            ? "audiera key required"
             : selectedFile
             ? "custom stem loaded"
             : "upload required"}

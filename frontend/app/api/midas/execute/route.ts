@@ -55,6 +55,7 @@ type ParsedRequest = {
   stemSize: number | null
   stemType: string | null
   clientAnalysis: AnalysisResult | null
+  audieraApiKey: string | null
 }
 
 const pick = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]
@@ -99,6 +100,7 @@ async function parseRequest(request: Request): Promise<ParsedRequest> {
   if (contentType.includes("application/json")) {
     const body = (await request.json().catch(() => null)) as {
       creator?: string
+      audieraApiKey?: string
       analysis?: unknown
       stemMeta?: { name?: string; size?: number; type?: string }
     } | null
@@ -112,6 +114,10 @@ async function parseRequest(request: Request): Promise<ParsedRequest> {
       stemSize: typeof meta?.size === "number" ? meta.size : null,
       stemType: meta?.type ?? null,
       clientAnalysis: normalizeClientAnalysis(body?.analysis),
+      audieraApiKey:
+        typeof body?.audieraApiKey === "string" && body.audieraApiKey.trim()
+          ? body.audieraApiKey.trim()
+          : null,
     }
   }
 
@@ -119,6 +125,7 @@ async function parseRequest(request: Request): Promise<ParsedRequest> {
     const formData = await request.formData()
     const creator = formData.get("creator")
     const stem = formData.get("stem")
+    const audieraApiKeyRaw = formData.get("audieraApiKey")
     return {
       connectedCreator: isValidAddress(creator) ? creator : null,
       stemFile: stem instanceof File ? stem : null,
@@ -126,6 +133,10 @@ async function parseRequest(request: Request): Promise<ParsedRequest> {
       stemSize: stem instanceof File ? stem.size : null,
       stemType: stem instanceof File ? stem.type : null,
       clientAnalysis: null,
+      audieraApiKey:
+        typeof audieraApiKeyRaw === "string" && audieraApiKeyRaw.trim()
+          ? audieraApiKeyRaw.trim()
+          : null,
     }
   }
 
@@ -136,6 +147,7 @@ async function parseRequest(request: Request): Promise<ParsedRequest> {
     stemSize: null,
     stemType: null,
     clientAnalysis: null,
+    audieraApiKey: null,
   }
 }
 
@@ -248,8 +260,26 @@ async function pollAudieraMusic(taskId: string, key: string): Promise<MusicResul
 
 export async function POST(request: Request) {
   const parsed = await parseRequest(request)
-  const { connectedCreator, stemFile, stemName, stemSize, stemType, clientAnalysis } =
+  const {
+    connectedCreator,
+    stemFile,
+    stemName,
+    stemSize,
+    stemType,
+    clientAnalysis,
+    audieraApiKey,
+  } =
     parsed
+  if (!audieraApiKey) {
+    return Response.json(
+      {
+        status: "error",
+        message:
+          "Missing audieraApiKey. Get one from https://ai.audiera.fi/en/settings/api-keys and include it in your request.",
+      },
+      { status: 400 },
+    )
+  }
   const analysis =
     clientAnalysis ?? (await analyzeTrackOnVps(stemFile))
   const genre = pick(GENRES)
@@ -269,7 +299,7 @@ export async function POST(request: Request) {
       null,
   }
 
-  const audieraKey = process.env.AUDIERA_API_KEY
+  const audieraKey = audieraApiKey
   const dynamicArtist = pickArtistFromWallet(connectedCreator)
   const configuredArtistId = process.env.AUDIERA_ARTIST_ID
   const selectedArtist =
